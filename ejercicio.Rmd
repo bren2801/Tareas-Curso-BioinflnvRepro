@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library("adegenet")
+library("pegas")
+library("mmod")
+library("reshape2")
+library("ggplot2")
+
+
+#It is necesary a genind object
+
+###READING THE INPUT FILE
+#Read the genepop object and transform into a genind one 
+deer.adegenet <- read.genepop("../data/data_in/reddeer.gen", ncode = 3)
+strata(deer.adegenet) <- deer_strata
+deer.adegenet
+
+#Loading cvs file
+
+deer_strata <- read.table("../data/data_in/deer_strata.csv", header = TRUE, sep = "")
+
+#summary statistics for differentiation by Population
+setPop(deer.adegenet) <- ~Population
+diff_deer <- diff_stats(deer.adegenet)
+diff_deer
+
+##Reporting and Plotting
+
+per.locus <- melt(diff_deer$per.locus, varnames = c("Locus", "Statistic"))
+stats     <- c("Hs", "Ht", "Gst", "Gprime_st", "D", "D")
+glob      <- data.frame(Statistic = stats, value = diff_deer$global)
+
+#See head of the result per locus
+head(per.locus)
+head(glob)
+
+#Plotting
+ggplot(per.locus, aes(x = Statistic, y = value)) +
+  geom_boxplot() +
+  geom_point() +
+  geom_point(size = rel(3), color = "red", data = glob) +
+  ggtitle("Estimates of population differentiation")
+
+#Calculating confidence intervals
+set.seed(20151219) 
+bs_reps <- chao_bootstrap(deer.adegenet, nreps = 100)
+summarise_bootstrap(bs_reps, D_Jost)
+
+###AMOVA: ANALYSIS OF MOLECULAR VARIANCE
+deer_dist  <- dist(deer.adegenet) # Euclidean distance
+deer_stra  <- strata(deer.adegenet)
+deer_amova <- pegas::amova(deer_dist ~ Population, data = deer_stra, nperm = 0)
+deer_amova
+
+###DAPC: Discriminant Analysis of Principal Components
+#Calculating principal componentes
+dapc.deer <- dapc((deer.adegenet), var.contrib = TRUE, scale = FALSE, n.pca = 30, n.da = nPop(deer.adegenet))
+
+#PLOT
+scatter(dapc.deer)
+
+#Getting the optim number of PCs
+optim.a.score(dapc.deer)
+
+#Mejorar las características del gráfico
+
+#generar paleta de colores
+palette<- (c("#3fc1bf",
+             "#e23769",
+             "#44ca68",
+             "#9c49c3",
+             "#80bd43",
+             "#7063d4",
+             "#b3b738",
+             "#d177e0",
+             "#429d38",
+             "#d241a4",
+             "#4d8436",
+             "#4c7cdc",
+             "#cfa439",
+             "#8c509a",
+             "#5fbe8b",
+             "#c44884",
+             "#36815b",
+             "#d94e2e",
+             "#53a2d7",
+             "#df8830",
+             "#5667a5",
+             "#8f8736",
+             "#a496dd",
+             "#626825",
+             "#d486bf",
+             "#9eb66d",
+             "#c3424c",
+             "#d4a16c",
+             "#984961",
+             "#96642d",
+             "#e27e92",
+             "#a94d27",
+             "#e2816a"))
+
+#GRAPH
+scatter(dapc.deer, cell = 1, pch = 19, cstar = 0, mstree = TRUE, lwd = 0, lty = 1,  col = palette, bg = transp("white"), solid = .4, cex = 1, clab = 0.7)
+
+#Add a title
+
+title("DAPC", cex.main = 1,   font.main= 2, col.main= "light blue")
+
+###Clusters number
+grp<- find.clusters.genind(deer.adegenet, max.n.clust = 33, n.pca = 30, n.clust =33)
+
+#making a matrix where we can see the individuals of each population
+table(pop(deer.adegenet),grp$grp)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
