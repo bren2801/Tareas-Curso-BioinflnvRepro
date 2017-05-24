@@ -1,0 +1,117 @@
+---
+title: "4.Diferenciación_genética"
+author: "Brenda Muñoz Vazquez"
+date: "22 de mayo de 2017"
+output: html_document
+---
+#### Este script calcula la diferenciación genética de datos microsatelitales de 28 poblaciones de ciervo rojo europeo, nos da estadísticos de resumen de diferenciación global y por locus realiza un análisis de varianza molecular (AMOVA) y un análisis discriminante de componentes principales (DAPC) y distancias de Nei.
+
+#PAQUETES REQUERIDOS
+```{r}
+library("adegenet")
+library("pegas")
+library("mmod")
+library("reshape2")
+library("ggplot2")
+```
+##LEER EL ARCHIVO DE ENTRADA
+```{r}
+deer.adegenet <- read.genepop("../data/data_in/reddeer.gen", ncode = 3) #Lee el objeto genind
+deer_strata <- read.table("../data/data_in/deer_strata.csv", header = TRUE, sep = ",")#Archivo csv con información adicional
+```
+##COMBINAR OBJETOS
+```{r}
+strata(deer.adegenet) <- deer_strata #Se incluye la base de datos de deer_strata dentro del objeto genind deer.adegenet
+```
+#ESTADÍSTICOS DE RESUMEN
+```{r}
+setPop(deer.adegenet) <- ~poblacion
+diff_deer <- diff_stats(deer.adegenet) #Calcula la diferenciación genética por loci con GST y D
+diff_deer# muestra los resultados
+diferencias<- as.data.frame(diff_deer$global)# ver los estadísticos de resumen para todas las pobación
+write.csv(diferencias, "../data/data_out/diferencias.csv") #Guardar dentro de data_out
+```
+#GRAFICAR ESTADÍSTICOS DE DIFERENCIACIÓN GENÉTICA
+```{r}
+per.locus <- melt(diff_deer$per.locus, varnames = c("Locus", "Statistic")) #convierte el objeto de diferencias por locus en una dataframe llamada per.locus
+stats     <- c("Hs", "Ht", "Gst", "Gprime_st", "D", "D") #Crea un vector con los nombres de los estadísticos de diferenciación genética llamada stats
+glob      <- data.frame(Statistic = stats, value = diff_deer$global) #Crea una dataframe con las diferencias globales en una df llamada glob
+
+#Graficar
+
+ggplot(per.locus, aes(x = Statistic, y = value)) +
+  geom_boxplot() +
+  geom_point() +
+  geom_point(size = rel(3), color = "red", data = glob) +
+  ggtitle("Estimadores de diferenciación poblacional")
+
+#Calcular intervalos de confianza
+set.seed(20151219) 
+bs_reps <- chao_bootstrap(deer.adegenet, nreps = 100)
+summarise_bootstrap(bs_reps, D_Jost)
+```
+# AMOVA: ANALISIS DE VARIANZA MOLECULAR
+```{r}
+deer_dist  <- dist(deer.adegenet) #calcula la distancia euclidiana para deer.adegenet 
+deer_stra  <- strata(deer.adegenet) #crea una dataframe a partir de deer.adegenet
+deer_amova <- pegas::amova(deer_dist ~ poblacion, data = deer_stra, nperm = 0)#Realiza un analisis de varianza molecular de las poblaciones de ciervo rojo europeo 
+set.seed(20151219)#Genera números al azar
+deer_amova <- pegas::amova(deer_dist ~ poblacion, data = deer_stra, nperm = 100) #Realiza un analisis de varianza molecular de las poblaciones de ciervo rojo europeo  pero ahora haciendo 100 répicas de bootstrap
+deer_amova#muestra la tabla resultante 
+
+```
+#DAPC: ANÁLISIS DISCRIMINANTE DE COMPONENTES PRINCIPALES
+```{r}
+#Calcular componentes principales
+dapc.deer <- dapc((deer.adegenet), var.contrib = TRUE, scale = FALSE, n.pca = 27, n.da = nPop(deer.adegenet))
+
+#Conseguir el número óptimo de componentes principales
+optim.a.score(dapc.deer)
+
+#GRAFICAR
+
+#generar paleta de colores
+palette<- (c("#3fc1bf",
+             "#490022",
+             "#44ca68",
+             "#9c49c3",
+             "#80bd43",
+             "#7063d4",
+             "#b3b738",
+             "#d177e0",
+             "#429d38",
+             "#d241a4",
+             "#4d8436",
+             "#4c7cdc",
+             "#cfa439",
+             "#8c509a",
+             "#5fbe8b",
+             "#c44884",
+             "#36815b",
+             "#d94e2e",
+             "#53a2d7",
+             "#df8830",
+             "#22622f",
+             "#002e5a",
+             "#a496dd",
+             "#626825",
+             "#d486bf",
+             "#9eb66d",
+             "#c3424c",
+             "#d4a16c"))
+
+#Graficar
+scatter(dapc.deer, cell = 1, bg= "white", pch = 19, cstar = 1, mstree = TRUE, lwd = 0, lty = 1, col = palette, solid = .4, cex = 1, clab = 0.7)
+
+#Agregar un título
+
+title("DAPC", cex.main = 1,   font.main= 2, col.main= "purple")
+
+###Número de clusters
+grp<- find.clusters.genind(deer.adegenet, max.n.clust = 28, n.pca = 27, n.clust =28)
+
+#Hacer una matriz para ver los individuos que integran a cada población
+cluster<- table(pop(deer.adegenet),grp$grp)
+cluster
+
+```
