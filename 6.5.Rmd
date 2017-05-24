@@ -1,0 +1,66 @@
+---
+title: "Tarea 6.5"
+author: "Brenda Muñoz Vazquez"
+date: "24 de mayo de 2017"
+output: html_document
+---
+#### Este script calcula la diferenciación genética de datos microsatelitales de 28 poblaciones de ciervo rojo europeo, nos da estadísticos de resumen de diferenciación global y por locus realiza un análisis de varianza molecular (AMOVA) y un análisis discriminante de componentes principales (DAPC) y distancias de Nei.
+
+# PAQUETES REQUERIDOS
+```{r}
+library("adegenet")
+```
+## LEER EL ARCHIVO DE ENTRADA
+```{r}
+deer.adegenet <- read.genepop("../data/data_in/reddeer.gen", ncode = 3) #Lee el objeto genind
+```
+#DAPC: ANÁLISIS DISCRIMINANTE DE COMPONENTES PRINCIPALES
+```{r}
+#Calcular componentes principales
+dapc.deer <- dapc((deer.adegenet), var.contrib = TRUE, scale = FALSE, n.pca = 27, n.da = nPop(deer.adegenet))
+```
+
+# Conseguir el número óptimo de componentes principales
+```{r}
+optim.a.score(dapc.deer)
+
+```
+# GRAFICAR
+```{r}
+#generar paleta de colores
+palette<- (c("#3fc1bf",
+             "#490022",
+             "#44ca68",
+             "#9c49c3",
+             "#80bd43",
+             "#7063d4",
+             "#b3b738",
+             "#d177e0",
+             "#429d38",
+             "#d241a4",
+             "#4d8436",
+             "#4c7cdc",
+             "#cfa439",
+             "#8c509a",
+             "#5fbe8b",
+             "#c44884",
+             "#36815b",
+             "#d94e2e",
+             "#53a2d7",
+             "#df8830",
+             "#22622f",
+             "#002e5a",
+             "#a496dd",
+             "#626825",
+             "#d486bf",
+             "#9eb66d",
+             "#c3424c",
+             "#d4a16c"))
+
+#Graficar
+scatter(dapc.deer, cell = 1, bg= "white", pch = 19, cstar = 1, mstree = TRUE, lwd = 0, lty = 1, col = palette, solid = .4, cex = 1, clab = 0.7)
+
+#Agregar un título
+
+title("DAPC", cex.main = 1,   font.main= 2, col.main= "purple")
+```
