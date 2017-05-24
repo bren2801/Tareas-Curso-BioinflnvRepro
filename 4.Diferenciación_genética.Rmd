@@ -6,7 +6,7 @@ output: html_document
 ---
 #### Este script calcula la diferenciación genética de datos microsatelitales de 28 poblaciones de ciervo rojo europeo, nos da estadísticos de resumen de diferenciación global y por locus realiza un análisis de varianza molecular (AMOVA) y un análisis discriminante de componentes principales (DAPC) y distancias de Nei.
 
-#PAQUETES REQUERIDOS
+# PAQUETES REQUERIDOS
 ```{r}
 library("adegenet")
 library("pegas")
@@ -14,16 +14,16 @@ library("mmod")
 library("reshape2")
 library("ggplot2")
 ```
-##LEER EL ARCHIVO DE ENTRADA
+# LEER EL ARCHIVO DE ENTRADA
 ```{r}
 deer.adegenet <- read.genepop("../data/data_in/reddeer.gen", ncode = 3) #Lee el objeto genind
 deer_strata <- read.table("../data/data_in/deer_strata.csv", header = TRUE, sep = ",")#Archivo csv con información adicional
 ```
-##COMBINAR OBJETOS
+# COMBINAR OBJETOS
 ```{r}
 strata(deer.adegenet) <- deer_strata #Se incluye la base de datos de deer_strata dentro del objeto genind deer.adegenet
 ```
-#ESTADÍSTICOS DE RESUMEN
+# ESTADÍSTICOS DE RESUMEN
 ```{r}
 setPop(deer.adegenet) <- ~poblacion
 diff_deer <- diff_stats(deer.adegenet) #Calcula la diferenciación genética por loci con GST y D
@@ -31,7 +31,7 @@ diff_deer# muestra los resultados
 diferencias<- as.data.frame(diff_deer$global)# ver los estadísticos de resumen para todas las pobación
 write.csv(diferencias, "../data/data_out/diferencias.csv") #Guardar dentro de data_out
 ```
-#GRAFICAR ESTADÍSTICOS DE DIFERENCIACIÓN GENÉTICA
+# GRAFICAR ESTADÍSTICOS DE DIFERENCIACIÓN GENÉTICA
 ```{r}
 per.locus <- melt(diff_deer$per.locus, varnames = c("Locus", "Statistic")) #convierte el objeto de diferencias por locus en una dataframe llamada per.locus
 stats     <- c("Hs", "Ht", "Gst", "Gprime_st", "D", "D") #Crea un vector con los nombres de los estadísticos de diferenciación genética llamada stats
@@ -60,7 +60,7 @@ deer_amova <- pegas::amova(deer_dist ~ poblacion, data = deer_stra, nperm = 100)
 deer_amova#muestra la tabla resultante 
 
 ```
-#DAPC: ANÁLISIS DISCRIMINANTE DE COMPONENTES PRINCIPALES
+# DAPC: ANÁLISIS DISCRIMINANTE DE COMPONENTES PRINCIPALES
 ```{r}
 #Calcular componentes principales
 dapc.deer <- dapc((deer.adegenet), var.contrib = TRUE, scale = FALSE, n.pca = 27, n.da = nPop(deer.adegenet))
